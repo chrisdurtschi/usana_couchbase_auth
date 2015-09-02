@@ -4,7 +4,7 @@ FROM ubuntu
 RUN apt-get update
 
 # install nodejs and npm
-RUN apt-get install -y nodejs npm git git-core
+RUN apt-get install -y nodejs nodejs-legacy npm git git-core
 
 ADD start.sh /tmp/
 
