@@ -23,7 +23,7 @@ app.post('/session/:db', function(req, res) {
     'Accept': 'application/json'
   };
 
-  var couchUrl = 'http://127.0.0.1:4985/' + req.params.db + '/';
+  var couchUrl = 'http://cbsg:4985/' + req.params.db + '/';
 
   async.waterfall([
     // Ensure the database exists
