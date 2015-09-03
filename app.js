@@ -1,5 +1,5 @@
 var async = require('async');
-var rest = require('restler');
+var rest = require('unirest');
 var express = require('express');
 
 var app = express();
@@ -23,82 +23,74 @@ app.post('/session/:db', function(req, res) {
     'Accept': 'application/json'
   };
 
-  var couchUrl = 'http://cbsg:4985/' + req.params.db + '/';
+  var couchHost = process.env.COUCHBASE_SYNC_GATEWAY_HOST || 'cbsg';
+  var couchUrl = 'http://' + couchHost + ':4985/' + req.params.db + '/';
 
   async.waterfall([
     // Ensure the database exists
     function(callback) {
-      rest.get(couchUrl).on('complete', function(data, response) {
-        if (!response) {
-          callback(true, 'No response checking for database existence');
-          return;
-        }
-        if (response.statusCode != 200) {
-          callback(true, 'The database ' + req.params.db + ' does not exist');
-        } else {
+      rest.get(couchUrl).end(function(response) {
+        if (response.ok) {
           callback(null);
+        } else {
+          callback(true, 'The database ' + req.params.db + ' does not exist');
         }
       });
     },
     // Query the customer ID from USANA by requesting their volume report
     function(callback) {
-      rest.get('https://www.usanabeta.com/usana-api/rest/volumeReport/current', {
-        headers: headers
-      }).on('complete', function(data, response) {
-        if (!response) {
-          callback(true, 'No response');
-          return;
-        }
-        if (response.statusCode == 200) {
-          if (data.customerId) {
-            callback(null, data.customerId);
+      rest.get('https://www.usanabeta.com/usana-api/rest/volumeReport/current')
+      .headers(headers)
+      .end(function(response) {
+        if (response.ok) {
+          if (response.body.customerId) {
+            callback(null, response.body.customerId);
           } else {
-            callback(true, 'Data: ' + data);
+            callback(true, 'Data: ' + response.body);
           }
         } else {
           callback(true, 'Response: ' + response);
         }
       });
     },
-    // Check to see if the user exists in the sync gateway, and create them if they don't exist
+    // Check to see if the user exists in the sync gateway
     function(customerId, callback) {
-      rest.get(couchUrl + '_user/' + customerId).on('complete', function(data, response) {
-        if (!response) {
-          callback(true, 'Got no response checking for existence of user ' + customerId);
-          return;
-        }
-        if (response.statusCode == 404) {
-          console.log(customerId + ' does not exist, trying to create');
-          rest.put(couchUrl + '_user/' + customerId, {
-            data: JSON.stringify({name: customerId}),
-            headers: {'Content-Type': 'application/json'}
-          }).on('complete', function(data, response) {
-            if (!response) {
-              callback(true, 'Got no response trying to create user');
-              return;
-            }
-            console.log('Create User ' + customerId + ': Status Code = ' + response.status);
-            if (response.statusCode == 200) {
-              callback(null, customerId);
-            } else {
-              callback(true, 'Creating user was not successful');
-            }
-          });
+      rest.get(couchUrl + '_user/' + customerId).end(function(response) {
+        if (response.ok) {
+          callback(null, customerId, true);
+        } else if (response.notFound) {
+          callback(null, customerId, false);
         } else {
-          callback(null, customerId);
+          callback(true, 'Error checking for existence of user ' + customerId);
         }
       });
     },
+    // Create user if they don't exist
+    function(customerId, exists, callback) {
+      if (!exists) {
+        rest.put(couchUrl + '_user/' + customerId)
+        .header('Content-Type', 'application/json')
+        .send({name: customerId})
+        .end(function(response) {
+          if (response.ok) {
+            callback(null, customerId);
+          } else {
+            callback(true, response);
+          }
+        });
+      } else {
+        // Pass on through
+        callback(null, customerId);
+      }
+    },
+    // Create a session
     function(customerId, callback) {
-      rest.postJson(couchUrl + '_session', {
-        name: customerId
-      }).on('complete', function(data, response) {
-        if (!response) {
-          callback(true, 'Got no response trying to create session');
-          return;
-        }
-        if (response.statusCode == 200) {
-          callback(null, data);
+      rest.post(couchUrl + '_session')
+      .header('Content-Type', 'application/json')
+      .send({name: customerId})
+      .end(function(response) {
+        if (response.ok) {
+          callback(null, response.body);
         } else {
           callback(true, 'Creating session was not successful');
         }
@@ -106,7 +98,7 @@ app.post('/session/:db', function(req, res) {
     }
   ], function(err, results) {
     if (err) {
-      res.status(400).send('OH NO!' + results);
+      res.status(400).send(results);
     } else {
       res.status(200).send(results);
     }
