@@ -4,6 +4,31 @@ var express = require('express');
 
 var app = express();
 
+app.delete('/flush/:bucket', function(req, res) {
+  // Validate Authorization header exists
+  var authorization = req.get('Authorization');
+  if (!authorization) {
+    res.status(400).send('Authorization header is required');
+  }
+
+  var headers = {
+    'Authorization': authorization,
+    'SecureToken': secureToken,
+    'Accept': 'application/json'
+  };
+
+  var couchHost = process.env.COUCHBASE_SERVER_HOST || 'cbs';
+  var couchUrl = 'http://' + couchHost + ':8091/pools/default/buckets/' + req.params.bucket + '/controller/doFlush';
+
+  rest.post(couchUrl).end(function(response) {
+    if (response.ok) {
+      res.status(200).send(req.params.bucket + ' flushed');
+    } else {
+      res.status(response.status).send('Flushing bucket failed');
+    }
+  });
+});
+
 app.post('/session/:db', function(req, res) {
   // Validate Authorization header exists
   var authorization = req.get('Authorization');
