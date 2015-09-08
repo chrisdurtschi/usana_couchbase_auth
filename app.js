@@ -12,9 +12,7 @@ app.delete('/flush/:bucket', function(req, res) {
   }
 
   var headers = {
-    'Authorization': authorization,
-    'SecureToken': secureToken,
-    'Accept': 'application/json'
+    'Authorization': authorization
   };
 
   var couchHost = process.env.COUCHBASE_SERVER_HOST || 'cbs';
