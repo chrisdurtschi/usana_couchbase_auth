@@ -33,7 +33,7 @@ app.post('/session/:db', function(req, res) {
         if (response.ok) {
           callback(null);
         } else {
-          callback(true, 'The database ' + req.params.db + ' does not exist');
+          callback(404, 'The database ' + req.params.db + ' does not exist');
         }
       });
     },
@@ -46,10 +46,11 @@ app.post('/session/:db', function(req, res) {
           if (response.body.customerId) {
             callback(null, response.body.customerId);
           } else {
-            callback(true, 'Data: ' + response.body);
+            var message = "ERROR: StatusCode="+response.status+"; Body="+JSON.stringify(response.body);
+            callback(400, message);
           }
         } else {
-          callback(true, 'Response: ' + response);
+          callback(response.status, 'Response: ' + response);
         }
       });
     },
@@ -61,7 +62,7 @@ app.post('/session/:db', function(req, res) {
         } else if (response.notFound) {
           callback(null, customerId, false);
         } else {
-          callback(true, 'Error checking for existence of user ' + customerId);
+          callback(response.status, 'Error checking for existence of user ' + customerId);
         }
       });
     },
@@ -75,7 +76,7 @@ app.post('/session/:db', function(req, res) {
           if (response.ok) {
             callback(null, customerId);
           } else {
-            callback(true, response);
+            callback(response.status, response);
           }
         });
       } else {
@@ -92,13 +93,13 @@ app.post('/session/:db', function(req, res) {
         if (response.ok) {
           callback(null, response.body);
         } else {
-          callback(true, 'Creating session was not successful');
+          callback(response.status, 'Creating session was not successful');
         }
       });
     }
   ], function(err, results) {
     if (err) {
-      res.status(400).send(results);
+      res.status(err).send(results);
     } else {
       res.status(200).send(results);
     }
