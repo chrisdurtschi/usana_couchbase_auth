@@ -20,9 +20,9 @@ app.delete('/flush/:bucket', function(req, res) {
 
   rest.post(couchUrl).end(function(response) {
     if (response.ok) {
-      res.status(200).send(req.params.bucket + ' flushed');
+      res.status(200).send(response.body);
     } else {
-      res.status(response.status).send('Flushing bucket failed');
+      res.status(response.status).send(response.body);
     }
   });
 });
