@@ -94,7 +94,10 @@ app.post('/session/:db', function(req, res) {
       if (!exists) {
         rest.put(couchUrl + '_user/' + customerId)
         .header('Content-Type', 'application/json')
-        .send({name: customerId})
+        .send({
+          name: customerId,
+          admin_channels: ["user-" + customerId]
+        })
         .end(function(response) {
           if (response.ok) {
             callback(null, customerId);
