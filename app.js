@@ -4,11 +4,14 @@ var express = require('express');
 
 var app = express();
 
+app.use(require('connect-logger')());
+
 app.delete('/flush/:bucket', function(req, res) {
   // Validate Authorization header exists
   var authorization = req.get('Authorization');
   if (!authorization) {
     res.status(400).send('Authorization header is required');
+    return;
   }
 
   var headers = {
@@ -32,12 +35,14 @@ app.post('/session/:db', function(req, res) {
   var authorization = req.get('Authorization');
   if (!authorization) {
     res.status(400).send('Authorization header is required');
+    return;
   }
 
   // Validate SecureToken header exists
   var secureToken = req.get('SecureToken');
   if (!secureToken) {
     res.status(400).send('SecureToken header is required');
+    return;
   }
 
   var headers = {

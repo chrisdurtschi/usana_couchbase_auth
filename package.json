@@ -8,6 +8,7 @@
     "dependencies": {
         "debug": "~2.2.0",
         "express": "~4.12.4",
+        "connect-logger": "~0.0.1",
         "async": "~1.4.2",
         "unirest": "~0.4.2"
     }
