@@ -1,16 +1,24 @@
 var async = require('async');
 var rest = require('unirest');
 var express = require('express');
+var morgan = require('morgan');
+
+function logError(status, message) {
+  console.log("ERROR (" + status + "): " + message);
+}
 
 var app = express();
 
-app.use(require('connect-logger')());
+app.use(morgan(':method :url :status :response-time ms - SecureToken: :req[securetoken], Authorization: :req[authorization]\\n'));
 
 app.delete('/flush/:bucket', function(req, res) {
   // Validate Authorization header exists
   var authorization = req.get('Authorization');
   if (!authorization) {
-    res.status(400).send('Authorization header is required');
+    var status = 400;
+    var message = 'Authorization header is required';
+    logError(status, message);
+    res.status(status).send();
     return;
   }
 
@@ -34,14 +42,20 @@ app.post('/session/:db', function(req, res) {
   // Validate Authorization header exists
   var authorization = req.get('Authorization');
   if (!authorization) {
-    res.status(400).send('Authorization header is required');
+    var status = 400;
+    var message = 'Authorization header is required';
+    logError(status, message);
+    res.status(status).send(message);
     return;
   }
 
   // Validate SecureToken header exists
   var secureToken = req.get('SecureToken');
   if (!secureToken) {
-    res.status(400).send('SecureToken header is required');
+    var status = 400;
+    var message = 'SecureToken header is required';
+    logError(status, message);
+    res.status(status).send(message);
     return;
   }
 
@@ -130,6 +144,7 @@ app.post('/session/:db', function(req, res) {
     }
   ], function(err, results) {
     if (err) {
+      logError(err, results);
       res.status(err).send(results);
     } else {
       res.status(200).send(results);
