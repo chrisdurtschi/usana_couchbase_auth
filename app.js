@@ -79,16 +79,57 @@ app.post('/session/:db', function(req, res) {
         }
       });
     },
-    // Query the customer ID from USANA by requesting their volume report
+    // Query the customer from USANA
+    // Example response:
+    // [
+    //   "getCustomer",
+    //   2,
+    //   1,
+    //   {
+    //     "success": {
+    //       "customer": {
+    //         "id": 78867,
+    //         "salutation": "Mr.",
+    //         "firstName": "TEST's Account",
+    //         "middleName": "test test test",
+    //         "lastName": "Forclosure's",
+    //         "country": "US",
+    //         "type": "A",
+    //         "title": "SDIR",
+    //         "priceType": "AA",
+    //         "email1": "alwaysknow@gmail.com",
+    //         "locale": "en",
+    //         "currency": "USD",
+    //         "sponsorId": 23628,
+    //         "defPlacement": {
+    //           "bcId": "78867.001",
+    //           "side": 1
+    //         },
+    //         "defPCPlacement": {
+    //           "bcId": "78867.002",
+    //           "side": 1
+    //         },
+    //         "incomeMaxSubscriber": 1
+    //       }
+    //     }
+    //   }
+    // ]
     function(callback) {
-      rest.get('https://www.usanabeta.com/usana-api/rest/volumeReport/current')
-      .headers(headers)
+      rest.post('https://esb.usanabeta.com/core/thrift/CustomerService')
+      .headers({
+        'Authorization': authorization,
+        'Content-Type': 'application/json',
+        'Accept': 'application/simple-json'
+      })
+      .type('json')
+      .send('[1,"getCustomer",1,1,{"1":{"rec":{"1":{"string":"' + secureToken + '"},"2":{"string":""},"3":{"string":""}}}}]')
       .end(function(response) {
         if (response.ok) {
-          if (response.body.customerId) {
-            callback(null, response.body.customerId);
+          var json = JSON.parse(response.body);
+          if (json[3] && json[3].success) {
+            callback(null, json[3].success.customer.id.toString());
           } else {
-            var message = "ERROR: StatusCode="+response.status+"; Body="+JSON.stringify(response.body);
+            var message = "ERROR: StatusCode="+response.status+"; Body="+response.body;
             callback(400, message);
           }
         } else {
