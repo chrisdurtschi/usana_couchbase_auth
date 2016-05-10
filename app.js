@@ -126,7 +126,7 @@ app.post('/session/:db', function(req, res) {
       .end(function(response) {
         if (response.ok) {
           var json = JSON.parse(response.body);
-          if (json[3] && json[3].success) {
+          if (json[3] && json[3].success && json[3].success.customer && json[3].success.customer.id) {
             callback(null, json[3].success.customer.id.toString());
           } else {
             var message = "ERROR: StatusCode="+response.status+"; Body="+response.body;
