@@ -156,6 +156,7 @@ app.post('/session/:db', function(req, res) {
         .header('Content-Type', 'application/json')
         .send({
           name: customerId,
+          password: "letmein",
           admin_channels: ["user-" + customerId]
         })
         .end(function(response) {
